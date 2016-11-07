@@ -1,6 +1,6 @@
 tosca_definitions_version: alien_dsl_1_3_0
 description: This archive has been created with alien4cloud.
-template_name: TestPullRequest
+template_name: TestRest
 template_version: 0.1.0-SNAPSHOT
 template_author: admin
 
