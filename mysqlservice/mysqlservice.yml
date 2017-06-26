@@ -1,0 +1,73 @@
+tosca_definitions_version: alien_dsl_1_4_0
+
+metadata:
+  template_name: MysqlService
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: ""
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN14
+  - mysql-type:1.4.0-SNAPSHOT
+
+topology_template:
+  substitution_mappings:
+    node_type: tosca.nodes.Database
+    capabilities:
+      database_endpoint: [ AbstractMysql, database_endpoint ]
+  node_templates:
+    AbstractMysql:
+      type: org.alien4cloud.nodes.AbstractMysql
+      requirements:
+        - host:
+            node: Compute
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+      capabilities:
+        database_endpoint:
+          properties:
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+    Compute:
+      type: tosca.nodes.Compute
+      capabilities:
+        os:
+          properties:
+            architecture: "x86_64"
+            type: linux
+            distribution: ubuntu
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+  workflows:
+    install:
+      steps:
+        Compute_install:
+          node: Compute
+          activity:
+            delegate: install
+        AbstractMysql_install:
+          node: AbstractMysql
+          activity:
+            delegate: install
+    uninstall:
+      steps:
+        Compute_uninstall:
+          node: Compute
+          activity:
+            delegate: uninstall
+        AbstractMysql_uninstall:
+          node: AbstractMysql
+          activity:
+            delegate: uninstall
