@@ -1,7 +1,7 @@
 tosca_definitions_version: alien_dsl_1_4_0
 
 metadata:
-  template_name: MysqlService
+  template_name: Simple
   template_version: 0.1.0-SNAPSHOT
   template_author: admin
 
@@ -15,22 +15,8 @@ topology_template:
   substitution_mappings:
     node_type: tosca.nodes.Database
     capabilities:
-      database_endpoint: [ AbstractMysql, database_endpoint ]
+      database_endpoint: [ Mysql, database_endpoint ]
   node_templates:
-    AbstractMysql:
-      type: org.alien4cloud.nodes.AbstractMysql
-      requirements:
-        - host:
-            node: Compute
-            capability: tosca.capabilities.Container
-            relationship: tosca.relationships.HostedOn
-      capabilities:
-        database_endpoint:
-          properties:
-            protocol: tcp
-            secure: false
-            network_name: PRIVATE
-            initiator: source
     Compute:
       type: tosca.nodes.Compute
       capabilities:
@@ -50,6 +36,27 @@ topology_template:
             protocol: tcp
             network_name: PRIVATE
             initiator: source
+    Mysql:
+      type: org.alien4cloud.nodes.Mysql
+      properties:
+        port: 3306
+        name: wordpress
+        db_user: pass
+        db_password: pass
+        bind_address: true
+        storage_path: "/mountedStorage"
+      requirements:
+        - host:
+            node: Compute
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+      capabilities:
+        database_endpoint:
+          properties:
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
   workflows:
     install:
       steps:
@@ -57,17 +64,153 @@ topology_template:
           node: Compute
           activity:
             delegate: install
-        AbstractMysql_install:
-          node: AbstractMysql
+          on-success:
+            - Mysql_initial
+        Mysql_initial:
+          node: Mysql
           activity:
-            delegate: install
+            set_state: initial
+          on-success:
+            - Mysql_creating
+        Mysql_creating:
+          node: Mysql
+          activity:
+            set_state: creating
+          on-success:
+            - create_Mysql
+        create_Mysql:
+          node: Mysql
+          activity:
+            call_operation: tosca.interfaces.node.lifecycle.Standard.create
+          on-success:
+            - Mysql_created
+        Mysql_created:
+          node: Mysql
+          activity:
+            set_state: created
+          on-success:
+            - Mysql_configuring
+        Mysql_configuring:
+          node: Mysql
+          activity:
+            set_state: configuring
+          on-success:
+            - configure_Mysql
+        configure_Mysql:
+          node: Mysql
+          activity:
+            call_operation: tosca.interfaces.node.lifecycle.Standard.configure
+          on-success:
+            - Mysql_configured
+        Mysql_configured:
+          node: Mysql
+          activity:
+            set_state: configured
+          on-success:
+            - Mysql_starting
+        Mysql_starting:
+          node: Mysql
+          activity:
+            set_state: starting
+          on-success:
+            - start_Mysql
+        start_Mysql:
+          node: Mysql
+          activity:
+            call_operation: tosca.interfaces.node.lifecycle.Standard.start
+          on-success:
+            - Mysql_started
+        Mysql_started:
+          node: Mysql
+          activity:
+            set_state: started
     uninstall:
       steps:
         Compute_uninstall:
           node: Compute
           activity:
             delegate: uninstall
-        AbstractMysql_uninstall:
-          node: AbstractMysql
+        Mysql_stopping:
+          node: Mysql
           activity:
-            delegate: uninstall
+            set_state: stopping
+          on-success:
+            - stop_Mysql
+        stop_Mysql:
+          node: Mysql
+          activity:
+            call_operation: tosca.interfaces.node.lifecycle.Standard.stop
+          on-success:
+            - Mysql_stopped
+        Mysql_stopped:
+          node: Mysql
+          activity:
+            set_state: stopped
+          on-success:
+            - Mysql_deleting
+        Mysql_deleting:
+          node: Mysql
+          activity:
+            set_state: deleting
+          on-success:
+            - delete_Mysql
+        delete_Mysql:
+          node: Mysql
+          activity:
+            call_operation: tosca.interfaces.node.lifecycle.Standard.delete
+          on-success:
+            - Mysql_deleted
+        Mysql_deleted:
+          node: Mysql
+          activity:
+            set_state: deleted
+          on-success:
+            - Compute_uninstall
+    start:
+      steps:
+        Compute_start:
+          node: Compute
+          activity:
+            delegate: start
+          on-success:
+            - Mysql_starting
+        Mysql_starting:
+          node: Mysql
+          activity:
+            set_state: starting
+          on-success:
+            - start_Mysql
+        start_Mysql:
+          node: Mysql
+          activity:
+            call_operation: tosca.interfaces.node.lifecycle.Standard.start
+          on-success:
+            - Mysql_started
+        Mysql_started:
+          node: Mysql
+          activity:
+            set_state: started
+    stop:
+      steps:
+        Compute_stop:
+          node: Compute
+          activity:
+            delegate: stop
+        Mysql_stopping:
+          node: Mysql
+          activity:
+            set_state: stopping
+          on-success:
+            - stop_Mysql
+        stop_Mysql:
+          node: Mysql
+          activity:
+            call_operation: tosca.interfaces.node.lifecycle.Standard.stop
+          on-success:
+            - Mysql_stopped
+        Mysql_stopped:
+          node: Mysql
+          activity:
+            set_state: stopped
+          on-success:
+            - Compute_stop
