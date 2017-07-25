@@ -1,7 +1,7 @@
 tosca_definitions_version: alien_dsl_1_4_0
 
 metadata:
-  template_name: MysqlService
+  template_name: Simple
   template_version: 0.1.0-SNAPSHOT
   template_author: admin
 
@@ -12,8 +12,39 @@ imports:
   - mysql-type:1.4.0-SNAPSHOT
 
 topology_template:
+  inputs:
+    password:
+      type: string
+      required: false
+      description: "the optional password for the DB user account"
+    port:
+      type: integer
+      required: false
+      description: "the port the underlying database service will listen to for data"
+    db_user:
+      type: string
+      required: true
+      default: pass
+      description: "The special user account used for database administration."
+    name:
+      type: string
+      required: true
+      default: wordpress
+      description: "The logical name of the database."
+    user:
+      type: string
+      required: false
+      description: "the optional user account name for DB administration"
+    db_password:
+      type: string
+      required: true
+      default: pass
+      description: "The password associated with the user account provided in the ‘db_user’ property."
   substitution_mappings:
-    node_type: tosca.nodes.Database
+    node_type: org.alien4cloud.nodes.AbstractMysql
+    capabilities:
+      feature: [ Mysql, feature ]
+      database_endpoint: [ Mysql, database_endpoint ]
   node_templates:
     Compute:
       type: tosca.nodes.Compute
@@ -38,9 +69,9 @@ topology_template:
       type: org.alien4cloud.nodes.Mysql
       properties:
         port: 3306
-        name: wordpress
-        db_user: pass
-        db_password: pass
+        name: { get_input: name }
+        db_user: { get_input: db_user }
+        db_password: { get_input: db_password }
         bind_address: true
         storage_path: "/mountedStorage"
       requirements:
@@ -55,6 +86,13 @@ topology_template:
             secure: false
             network_name: PRIVATE
             initiator: source
+  outputs:
+    Mysql_name:
+      value: { get_property: [ Mysql, name ] }
+    Mysql_db_password:
+      value: { get_property: [ Mysql, db_password ] }
+    Mysql_db_user:
+      value: { get_property: [ Mysql, db_user ] }
   workflows:
     install:
       steps:
