@@ -8,13 +8,8 @@ metadata:
 description: ""
 
 imports:
-  - org.alien4cloud.lang.java.jdk.linux:1.4.0-SNAPSHOT
   - tosca-normative-types:1.0.0-ALIEN14
-  - petclinic-war-type:1.4.0-SNAPSHOT
   - mysql-type:1.4.0-SNAPSHOT
-  - tomcat-war-types:1.4.0-SNAPSHOT
-  - org.alien4cloud.lang.java.pub:1.4.0-SNAPSHOT
-  - postgresql-type:1.4.0-SNAPSHOT
 
 topology_template:
   inputs:
@@ -33,6 +28,11 @@ topology_template:
       required: true
       default: pass
       description: "The password associated with the user account provided in the ‘db_user’ property."
+    port:
+      type: integer
+      required: true
+      default: 3306
+      description: "The port on which the underlying database service will listen to data."
   substitution_mappings:
     node_type: org.alien4cloud.nodes.AbstractMysql
     capabilities:
@@ -60,7 +60,7 @@ topology_template:
     Mysql:
       type: org.alien4cloud.nodes.Mysql
       properties:
-        port: 3306
+        port: { get_input: port }
         name: { get_input: name }
         db_user: { get_input: db_user }
         db_password: { get_input: db_password }
@@ -79,12 +79,14 @@ topology_template:
             network_name: PRIVATE
             initiator: source
   outputs:
+    Mysql_port:
+      value: { get_property: [ Mysql, port ] }
+    Mysql_db_user:
+      value: { get_property: [ Mysql, db_user ] }
     Mysql_name:
       value: { get_property: [ Mysql, name ] }
     Mysql_db_password:
       value: { get_property: [ Mysql, db_password ] }
-    Mysql_db_user:
-      value: { get_property: [ Mysql, db_user ] }
   workflows:
     install:
       steps:
