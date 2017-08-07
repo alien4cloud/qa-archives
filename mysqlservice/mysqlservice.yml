@@ -38,7 +38,7 @@ topology_template:
     capabilities:
       database_endpoint: [ Mysql, database_endpoint ]
   node_templates:
-    Compute:
+    QA_Compute:
       type: tosca.nodes.Compute
       capabilities:
         os:
