@@ -38,7 +38,7 @@ topology_template:
     capabilities:
       database_endpoint: [ Mysql, database_endpoint ]
   node_templates:
-    Compute:
+    QA_Compute:
       type: tosca.nodes.Compute
       capabilities:
         os:
@@ -68,7 +68,7 @@ topology_template:
         storage_path: "/mountedStorage"
       requirements:
         - host:
-            node: Compute
+            node: QA_Compute
             capability: tosca.capabilities.Container
             relationship: tosca.relationships.HostedOn
       capabilities:
@@ -91,7 +91,7 @@ topology_template:
     install:
       steps:
         Compute_install:
-          node: Compute
+          node: QA_Compute
           activity:
             delegate: install
           on-success:
@@ -157,7 +157,7 @@ topology_template:
     uninstall:
       steps:
         Compute_uninstall:
-          node: Compute
+          node: QA_Compute
           activity:
             delegate: uninstall
         Mysql_stopping:
@@ -199,7 +199,7 @@ topology_template:
     start:
       steps:
         Compute_start:
-          node: Compute
+          node: QA_Compute
           activity:
             delegate: start
           on-success:
@@ -223,7 +223,7 @@ topology_template:
     stop:
       steps:
         Compute_stop:
-          node: Compute
+          node: QA_Compute
           activity:
             delegate: stop
         Mysql_stopping:
