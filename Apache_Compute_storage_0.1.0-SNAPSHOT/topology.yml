@@ -1,0 +1,68 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: Apache_Compute_storage
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: "This archive has been created with alien4cloud."
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20SM5
+  - org.alien4cloud.apache.linux_sh:1.4.0-SNAPSHOT
+  - org.alien4cloud.apache.pub:1.4.0-SNAPSHOT
+  - cloudify3-common-types:2.0.0-SM5
+  - cloudify-amazon-types:2.0.0-SM5
+
+topology_template:
+  node_templates:
+    Compute:
+      metadata:
+        a4c_edit_x: 28
+        a4c_edit_y: "-32"
+      type: tosca.nodes.Compute
+      requirements:
+        - dependsOnDeletableVolumeFeature:
+            type_requirement: dependency
+            node: DeletableVolume
+            capability: tosca.capabilities.Node
+            relationship: tosca.relationships.DependsOn
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    Apache:
+      type: org.alien4cloud.apache.linux_sh.Apache
+      properties:
+        component_version: 2.4
+        document_root: "/var/www"
+      requirements:
+        - hostedOnComputeHost:
+            type_requirement: host
+            node: Compute
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+      capabilities:
+        data_endpoint:
+          properties:
+            protocol: http
+            port: 80
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+        admin_endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    DeletableVolume:
+      type: alien.cloudify.aws.nodes.DeletableVolume
